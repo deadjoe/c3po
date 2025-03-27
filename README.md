@@ -9,10 +9,11 @@ A powerful and efficient tool for converting INFO format files to clean text for
 
 ## Features
 
-- **Efficient Processing**: Handles large files with parallel processing
-- **Content Validation**: Ensures the converted output maintains content integrity
+- **Efficient Processing**: Handles large files with parallel processing and automatic chunking
+- **Content Validation**: Ensures the converted output maintains content integrity with detailed metrics
 - **Format Cleaning**: Removes headers, separators, menu items, and control characters
-- **Comprehensive Logging**: Detailed logging system with configurable levels
+- **Semantic Markup**: Optional feature to identify and mark semantic structures (tables, code blocks, lists, headings)
+- **Comprehensive Logging**: Detailed logging system with configurable levels and color-coded output
 - **Customizable**: Adjustable parameters for processing and validation
 
 ## Installation
@@ -59,20 +60,30 @@ python c3po.py input_file.info output_file.txt [options]
 - `--workers=N`: Set the number of worker threads (default: CPU count)
 - `--debug`: Enable debug mode
 - `--log=LEVEL`: Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- `--enable-semantic-markers`: Enable semantic structure identification and marking
 
 ### Examples
 
 Basic conversion:
+
 ```bash
 python c3po.py document.info document.txt
 ```
 
 Convert with 4 worker threads and skip validation:
+
 ```bash
 python c3po.py large_document.info large_document.txt --workers=4 --no-verify
 ```
 
+Convert with semantic markup:
+
+```bash
+python c3po.py document.info document.txt --enable-semantic-markers
+```
+
 Convert with debug mode and detailed logging:
+
 ```bash
 python c3po.py document.info document.txt --debug --log=DEBUG
 ```
@@ -86,11 +97,21 @@ The tool validates converted content using several metrics:
 - **Keyword Retention**: Verifies important keywords are preserved (ideal: >25%)
 - **Content Similarity**: Samples content to ensure similarity (ideal: >10%)
 
+## Semantic Markup
+
+When enabled, the semantic processor identifies and marks various structures in the text:
+
+- **SQL Code Blocks**: Identifies and formats SQL code sections
+- **Tables**: Detects tabular data and preserves its structure
+- **Lists**: Recognizes and formats bullet points and numbered lists
+- **Headings**: Identifies section headings and maintains hierarchy
+
 ## Performance
 
 - Processes files at approximately 1.5MB/second on modern hardware
 - Memory usage scales efficiently with file size through chunked processing
 - Parallel processing utilizes available CPU cores for optimal performance
+- Automatic chunk size adjustment based on file size and available memory
 
 ## Contributing
 

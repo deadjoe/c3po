@@ -1,20 +1,20 @@
 """
 C3PO - INFO文件转换工具
-将INFO格式文件转换为纯文本格式，保持干净的从源文件到输出文件的转换流程。
 
-功能：
-- 移除文件头信息、分隔线、菜单区域等格式标记
-- 保留文档核心内容
+特性:
+- 支持大文件处理，自动分块和并行处理
+- 保留文档结构和格式
 - 提供内容验证功能，确保转换质量
 - 支持大文件并行处理
 
-用法: python c3po.py 输入文件.info 输出文件.txt [--no-verify] [--workers=N] [--debug] [--log=LEVEL]
+用法: python c3po.py 输入文件.info 输出文件.txt [--no-verify] [--workers=N] [--debug] [--log=LEVEL] [--enable-semantic-markers]
 
 参数:
   --no-verify: 跳过内容验证
   --workers=N: 设置工作线程数
   --debug: 启用调试模式
   --log=LEVEL: 设置日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  --enable-semantic-markers: 启用语义标记功能
 """
 
 import os
@@ -48,7 +48,7 @@ class ErrorHandler:
     def __init__(self, log_manager):
         """初始化错误处理器
         
-        Args:
+        Args：
             log_manager: 日志管理器实例
         """
         self.log = log_manager
@@ -56,13 +56,13 @@ class ErrorHandler:
     def handle_error(self, error, operation_name, fatal=False, return_value=None):
         """处理错误
         
-        Args:
+        Args：
             error: 异常对象
             operation_name: 操作名称
             fatal: 是否为致命错误
             return_value: 如果不是致命错误，返回的值
             
-        Returns:
+        Returns：
             如果不是致命错误，返回return_value；否则抛出异常
         """
         error_msg = f"{operation_name}错误: {str(error)}"
@@ -78,7 +78,7 @@ class ErrorHandler:
     def try_operation(self, operation, operation_name, args=None, kwargs=None, fatal=False, return_value=None):
         """尝试执行操作，处理可能的异常
         
-        Args:
+        Args：
             operation: 要执行的函数
             operation_name: 操作名称
             args: 位置参数
@@ -86,7 +86,7 @@ class ErrorHandler:
             fatal: 是否为致命错误
             return_value: 如果不是致命错误，返回的值
             
-        Returns:
+        Returns：
             操作结果或return_value
         """
         args = args or ()
@@ -103,7 +103,7 @@ class ConfigManager:
     def __init__(self, config_file=None):
         """初始化配置管理器
         
-        Args:
+        Args：
             config_file: 配置文件路径（可选）
         """
         # 默认配置
@@ -189,7 +189,7 @@ class ConfigManager:
     def _load_config_file(self, config_file):
         """从配置文件加载配置
         
-        Args:
+        Args：
             config_file: 配置文件路径
         """
         try:
@@ -202,11 +202,11 @@ class ConfigManager:
     def get_config(self, key, default=None):
         """获取配置值
         
-        Args:
+        Args：
             key: 配置键名
             default: 默认值，如果键不存在
             
-        Returns:
+        Returns：
             配置值
         """
         # 优先使用用户配置，然后是默认配置，最后是提供的默认值
@@ -215,7 +215,7 @@ class ConfigManager:
     def set_config(self, key, value):
         """设置配置值
         
-        Args:
+        Args：
             key: 配置键名
             value: 配置值
         """
@@ -224,10 +224,10 @@ class ConfigManager:
     def save_config(self, config_file):
         """保存配置到文件
         
-        Args:
+        Args：
             config_file: 配置文件路径
             
-        Returns:
+        Returns：
             bool: 是否保存成功
         """
         try:
@@ -242,10 +242,10 @@ class ConfigManager:
     def get_pattern(self, key):
         """获取正则表达式模式
         
-        Args:
+        Args：
             key: 模式键名
             
-        Returns:
+        Returns：
             正则表达式模式
         """
         return self.regex_patterns.get(key)
@@ -253,7 +253,7 @@ class ConfigManager:
     def get_all_patterns(self):
         """获取所有正则表达式模式
         
-        Returns:
+        Returns：
             所有正则表达式模式的字典
         """
         return self.regex_patterns
@@ -261,10 +261,10 @@ class ConfigManager:
     def get_semantic_marker(self, key):
         """获取语义标记
         
-        Args:
+        Args：
             key: 标记键名
             
-        Returns:
+        Returns：
             语义标记
         """
         return self.semantic_markers.get(key)
@@ -272,10 +272,18 @@ class ConfigManager:
     def get_all_semantic_markers(self):
         """获取所有语义标记
         
-        Returns:
+        Returns：
             所有语义标记的字典
         """
         return self.semantic_markers
+    
+    def get_semantic_markers(self):
+        """获取语义标记定义（兼容接口）
+        
+        Returns：
+            dict: 语义标记定义字典
+        """
+        return self.get_all_semantic_markers()
 
 class LogManager:
     """日志管理类，封装日志系统的设置和使用"""
@@ -298,7 +306,7 @@ class LogManager:
     def __init__(self, level=logging.INFO):
         """初始化日志管理器
         
-        Args:
+        Args：
             level: 日志级别
         """
         self.logger = self._setup_logging(level)
@@ -315,10 +323,10 @@ class LogManager:
     def _setup_logging(self, level):
         """配置日志系统
         
-        Args:
+        Args：
             level: 日志级别
             
-        Returns:
+        Returns：
             日志对象
         """
         # 创建日志格式
@@ -341,11 +349,11 @@ class LogManager:
     def _colorize(self, text, color):
         """为文本添加颜色
         
-        Args:
+        Args：
             text: 要着色的文本
             color: 颜色代码
             
-        Returns:
+        Returns：
             str: 着色后的文本
         """
         if not self.color_enabled or not self.is_terminal:
@@ -356,7 +364,7 @@ class LogManager:
     def set_level(self, level):
         """设置日志级别
         
-        Args:
+        Args：
             level: 日志级别
         """
         self.logger.setLevel(level)
@@ -364,7 +372,7 @@ class LogManager:
     def enable_color(self, enabled=True):
         """启用或禁用彩色日志
         
-        Args:
+        Args：
             enabled: 是否启用
         """
         self.color_enabled = enabled
@@ -372,7 +380,7 @@ class LogManager:
     def debug(self, message):
         """记录调试信息
         
-        Args:
+        Args：
             message: 日志消息
         """
         self.logger.debug(self._colorize(message, 'CYAN'))
@@ -380,7 +388,7 @@ class LogManager:
     def info(self, message):
         """记录一般信息
         
-        Args:
+        Args：
             message: 日志消息
         """
         self.logger.info(self._colorize(message, 'WHITE'))
@@ -388,7 +396,7 @@ class LogManager:
     def warning(self, message):
         """记录警告信息
         
-        Args:
+        Args：
             message: 日志消息
         """
         self.logger.warning(self._colorize(message, 'YELLOW'))
@@ -396,7 +404,7 @@ class LogManager:
     def error(self, message):
         """记录错误信息
         
-        Args:
+        Args：
             message: 日志消息
         """
         self.logger.error(self._colorize(message, 'RED'))
@@ -404,7 +412,7 @@ class LogManager:
     def critical(self, message):
         """记录严重错误信息
         
-        Args:
+        Args：
             message: 日志消息
         """
         self.logger.critical(self._colorize(f"{self.COLORS['BOLD']}{message}", 'RED'))
@@ -412,7 +420,7 @@ class LogManager:
     def success(self, message):
         """记录成功信息
         
-        Args:
+        Args：
             message: 日志消息
         """
         self.logger.info(self._colorize(message, 'GREEN'))
@@ -420,7 +428,7 @@ class LogManager:
     def print_progress(self, message, step=None, total_steps=None):
         """打印进度信息
         
-        Args:
+        Args：
             message: 进度消息
             step: 当前步骤
             total_steps: 总步骤数
@@ -430,12 +438,13 @@ class LogManager:
         else:
             log_msg = message
         
-        self.info(log_msg)
+        # 使用绿色显示进度信息，与成功信息保持一致
+        self.logger.info(self._colorize(log_msg, 'GREEN'))
     
     def start_progress(self, total, message="处理进度"):
         """开始进度跟踪
         
-        Args:
+        Args：
             total: 总数量
             message: 进度消息前缀
         """
@@ -453,7 +462,7 @@ class LogManager:
     def update_progress(self, current=None, increment=None):
         """更新进度
         
-        Args:
+        Args：
             current: 当前数量
             increment: 增量
         """
@@ -493,7 +502,7 @@ class LogManager:
     def end_progress(self, message=None):
         """结束进度跟踪
         
-        Args:
+        Args：
             message: 结束消息
         """
         if not self.progress_enabled or self.progress_total is None:
@@ -516,10 +525,10 @@ class LogManager:
     def _format_time(self, seconds):
         """格式化时间
         
-        Args:
+        Args：
             seconds: 秒数
             
-        Returns:
+        Returns：
             str: 格式化后的时间字符串
         """
         if seconds < 60:
@@ -535,7 +544,7 @@ class LogManager:
     def print_separator(self, char='-', length=60):
         """打印分隔线
         
-        Args:
+        Args：
             char: 分隔字符
             length: 分隔线长度
         """
@@ -544,7 +553,7 @@ class LogManager:
     def enable_progress(self, enabled=True):
         """启用或禁用进度显示
         
-        Args:
+        Args：
             enabled: 是否启用
         """
         self.progress_enabled = enabled
@@ -555,7 +564,7 @@ class FileHandler:
     def __init__(self, log_manager):
         """初始化文件处理器
         
-        Args:
+        Args：
             log_manager: 日志管理器实例
         """
         self.log = log_manager
@@ -563,11 +572,11 @@ class FileHandler:
     def get_file_info(self, file_path, large_file_threshold):
         """获取文件信息
         
-        Args:
+        Args：
             file_path: 文件路径
             large_file_threshold: 大文件阈值
         
-        Returns:
+        Returns：
             dict: 包含文件大小、修改时间等信息的字典，如果文件不存在则返回None
         """
         if not os.path.exists(file_path):
@@ -587,15 +596,15 @@ class FileHandler:
     def safe_open_file(self, file_path, mode='r', encoding='utf-8'):
         """安全打开文件，处理编码错误
         
-        Args:
+        Args：
             file_path: 文件路径
             mode: 打开模式
             encoding: 编码方式
         
-        Returns:
+        Returns：
             file: 文件对象
         
-        Raises:
+        Raises：
             IOError: 如果文件无法打开或读取
         """
         try:
@@ -611,7 +620,7 @@ class FileHandler:
     def create_string_buffer(self):
         """创建字符串缓冲区
         
-        Returns:
+        Returns：
             StringIO: 字符串缓冲区对象
         """
         return io.StringIO()
@@ -619,10 +628,10 @@ class FileHandler:
     def format_size(self, size_bytes):
         """格式化文件大小
         
-        Args:
+        Args：
             size_bytes: 文件大小（字节）
         
-        Returns:
+        Returns：
             str: 格式化后的大小字符串
         """
         if size_bytes < 1024:
@@ -637,10 +646,10 @@ class FileHandler:
     def format_time(self, seconds):
         """格式化时间
         
-        Args:
+        Args：
             seconds: 秒数
         
-        Returns:
+        Returns：
             str: 格式化后的时间字符串
         """
         if seconds < 60:
@@ -658,7 +667,7 @@ class TextProcessor:
     def __init__(self, config_manager, log_manager):
         """初始化文本处理器
         
-        Args:
+        Args：
             config_manager: 配置管理器实例
             log_manager: 日志管理器实例
         """
@@ -668,13 +677,13 @@ class TextProcessor:
     def process_chunk(self, chunk, patterns, is_first_chunk=False, is_last_chunk=False):
         """处理单个文本块，用于并行处理
         
-        Args:
+        Args：
             chunk: 要处理的文本块
             patterns: 要应用的正则表达式模式列表
             is_first_chunk: 是否为第一个块
             is_last_chunk: 是否为最后一个块
         
-        Returns:
+        Returns：
             tuple: (处理后的内容, 移除内容的哈希值字典, 替换计数)
         """
         content = chunk
@@ -719,12 +728,12 @@ class TextProcessor:
     def process_format_markers(self, content, pattern_desc, tqdm_available=False):
         """处理格式标记
         
-        Args:
+        Args：
             content: 要处理的文本内容
             pattern_desc: 要应用的模式描述列表，格式为 [(描述, 模式键名), ...]
             tqdm_available: tqdm库是否可用
         
-        Returns:
+        Returns：
             tuple: (处理后的内容, 移除内容的哈希值字典, 替换计数)
         """
         # 使用字典记录移除的内容摘要信息，而非存储完整内容
@@ -761,16 +770,18 @@ class TextProcessor:
         return content, removed_content_hashes, replaced_count
     
     def add_metadata_markers(self, content, max_content_size=10 * 1024 * 1024, max_matches_per_type=1000, debug=False, enable_semantic_markers=False):
-        """为内容添加语义元数据标记
+        """为内容添加语义元数据标记（兼容接口）
         
-        Args:
+        此方法保留为兼容接口，实际处理委托给SemanticProcessor
+        
+        Args：
             content: 要处理的文本内容
             max_content_size: 最大内容大小，超过此大小将分块处理
             max_matches_per_type: 每种类型最大匹配数量
             debug: 是否输出调试信息
             enable_semantic_markers: 是否启用语义标记功能（默认禁用）
         
-        Returns:
+        Returns：
             str: 添加了元数据标记的内容
         """
         # 如果禁用语义标记功能，直接返回原始内容
@@ -781,20 +792,32 @@ class TextProcessor:
         # 临时禁用所有处理，直接返回原始内容
         if debug:
             self.log.warning("警告：所有语义标记处理已临时禁用，直接返回原始内容")
-        
-        # 这里保留此函数接口，但实际不执行任何处理，直接返回原始内容
-        # 未来可以根据需要实现语义标记功能
-        return content
+            return content
+            
+        try:
+            # 使用新的语义处理器
+            from semantic_processor import SemanticProcessor
+            processor = SemanticProcessor(self.config, self.log)
+            
+            # 根据内容大小决定是否使用分块处理
+            if len(content) > max_content_size:
+                return processor.process_chunked(content, chunk_size=max_content_size)
+            else:
+                return processor.process(content)
+        except Exception as e:
+            self.log.error(f"语义处理出错: {str(e)}")
+            # 出错时返回原始内容
+            return content
     
     def get_tqdm_instance(self, iterable=None, total=None, desc=None):
         """获取tqdm进度条实例，如果可用
         
-        Args:
+        Args：
             iterable: 可迭代对象
             total: 总数
             desc: 描述
         
-        Returns:
+        Returns：
             tqdm或iterable: tqdm实例或原始可迭代对象
         """
         global TQDM_AVAILABLE
@@ -812,7 +835,7 @@ class ContentValidator:
     def __init__(self, config_manager, log_manager):
         """初始化内容验证器
         
-        Args:
+        Args：
             config_manager: 配置管理器实例
             log_manager: 日志管理器实例
         """
@@ -828,14 +851,14 @@ class ContentValidator:
     def validate(self, original, processed, removed_hashes=None, file_size=None, is_large_file=False):
         """统一的内容验证入口
         
-        Args:
+        Args：
             original: 原始内容（可以是完整内容或样本字典）
             processed: 处理后的内容
             removed_hashes: 移除内容的哈希值字典（可选）
             file_size: 原始文件大小（字节）
             is_large_file: 是否为大文件
             
-        Returns:
+        Returns：
             tuple: (验证结果布尔值, 详细报告)
         """
         self.log.info("开始内容验证...")
@@ -867,10 +890,10 @@ class ContentValidator:
     def _create_samples(self, content):
         """从内容创建样本
         
-        Args:
+        Args：
             content: 完整内容
             
-        Returns:
+        Returns：
             dict: 样本字典
         """
         sample_size = self.config.get_config('validation_sample_size', 100 * 1024)
@@ -898,12 +921,12 @@ class ContentValidator:
     def _simple_validate_content(self, original, processed, removed_hashes=None):
         """简化的内容验证函数（内部使用）
         
-        Args:
+        Args：
             original: 原始内容
             processed: 处理后的内容
             removed_hashes: 移除内容的哈希值字典（可选）
         
-        Returns:
+        Returns：
             tuple: (验证结果布尔值, 详细报告)
         """
         # 对于大文件，只使用样本进行验证
@@ -932,11 +955,11 @@ class ContentValidator:
     def _validate_content_sample(self, original, processed):
         """验证内容样本（内部使用）
         
-        Args:
+        Args：
             original: 原始内容样本
             processed: 处理后的内容样本
         
-        Returns:
+        Returns：
             tuple: (验证结果布尔值, 详细报告)
         """
         results = {}
@@ -1047,11 +1070,11 @@ class ContentValidator:
     def calculate_best_similarity(self, sample, processed_text):
         """计算样本与处理后文本的最佳相似度
         
-        Args:
+        Args：
             sample: 样本文本
             processed_text: 处理后的完整文本
         
-        Returns:
+        Returns：
             float: 最佳相似度分数
         """
         # 对于大文本，只使用前后各100KB进行相似度计算
@@ -1092,13 +1115,13 @@ class ContentValidator:
     def _validate_with_sampling(self, original_samples, processed, removed_hashes=None, file_size=None):
         """使用采样和统计学方法验证大文件内容（内部使用）
         
-        Args:
+        Args：
             original_samples: 原始内容的样本字典，键为位置标识
             processed: 处理后的完整内容
             removed_hashes: 移除内容的哈希值字典（可选）
             file_size: 原始文件大小（字节）
             
-        Returns:
+        Returns：
             tuple: (验证结果布尔值, 详细报告)
         """
         self.log.info("开始采样统计验证...")
@@ -1196,10 +1219,10 @@ class ContentValidator:
     def _calculate_entropy(self, text):
         """计算文本的信息熵
         
-        Args:
+        Args：
             text: 要计算熵的文本
             
-        Returns:
+        Returns：
             float: 信息熵值
         """
         # 移除空白字符以专注于实际内容
@@ -1224,11 +1247,11 @@ class ContentValidator:
     def _calculate_statistical_significance(self, sample, full_text):
         """计算样本与完整文本之间的统计显著性
         
-        Args:
+        Args：
             sample: 样本文本
             full_text: 完整文本
             
-        Returns:
+        Returns：
             float: 统计显著性得分 (0-1)
         """
         # 简化为词频分布比较
@@ -1272,7 +1295,7 @@ class Converter:
     def __init__(self, config_manager, log_manager, file_handler, text_processor, content_validator, error_handler):
         """初始化转换器
         
-        Args:
+        Args：
             config_manager: 配置管理器实例
             log_manager: 日志管理器实例
             file_handler: 文件处理器实例
@@ -1286,11 +1309,14 @@ class Converter:
         self.processor = text_processor
         self.validator = content_validator
         self.error_handler = error_handler
+        
+        # 初始化语义处理器（延迟导入，避免循环依赖）
+        self.semantic_processor = None
     
     def convert(self, input_file, output_file, verify=True, chunk_size=1024 * 1024, max_workers=None, debug=False, enable_semantic_markers=False):
         """转换info文件到纯文本，支持大文件处理，保持简单转换
         
-        Args:
+        Args：
             input_file: 输入文件路径
             output_file: 输出文件路径
             verify: 是否验证内容
@@ -1299,7 +1325,7 @@ class Converter:
             debug: 是否输出调试信息
             enable_semantic_markers: 是否启用语义标记功能（默认禁用）
         
-        Returns:
+        Returns：
             tuple: (成功标志, 消息)
         """
         try:
@@ -1345,7 +1371,7 @@ class Converter:
             else:
                 use_chunking = False
             
-            self.log.print_progress(f"正在读取文件: {input_file}", 1, 5)
+            self.log.print_progress(f"正在读取文件: {input_file}", 1, 6)
             
             # 流式读取和处理，减少内存使用
             if use_chunking:
@@ -1390,6 +1416,7 @@ class Converter:
                         self.log.info(f"读取了 {len(chunks)} 个块，总大小: {position} 字节")
                         
                         # 提交并行处理任务
+                        self.log.print_progress("开始优化处理格式标记", 2, 6)
                         self.log.start_progress(len(chunks), "处理文件块")
                         for i, chunk in enumerate(chunks):
                             is_first = (i == 0)
@@ -1458,7 +1485,7 @@ class Converter:
                 content = original_content
                 original_content_samples = {'full': original_content}  # 小文件保存完整内容
                 
-                self.log.print_progress("开始优化处理格式标记", 2, 5)
+                self.log.print_progress("开始优化处理格式标记", 2, 6)
                 
                 # 内容处理 - 第一阶段：移除格式标记
                 pattern_desc = [
@@ -1480,13 +1507,32 @@ class Converter:
                 self.log.info(f"    总共移除了 {replaced_count} 项格式内容")
             
             # 规范化空行 - 这是一个简单的格式化，不会大幅修改内容
-            self.log.print_progress("规范化文档格式", 3, 5)
+            self.log.print_progress("规范化文档格式", 3, 6)
             try:
                 content = self.config.get_pattern('empty_lines').sub('\n\n', content)
             except Exception as e:
                 return self.error_handler.handle_error(e, "空行规范化", fatal=True)
             
-            self.log.print_progress(f"正在保存到: {output_file}", 4, 5)
+            # 应用语义处理（如果启用）
+            if enable_semantic_markers:
+                self.log.print_progress("应用语义标记", 4, 6)
+                try:
+                    # 延迟导入语义处理器，避免循环依赖
+                    if self.semantic_processor is None:
+                        from semantic_processor import SemanticProcessor
+                        self.semantic_processor = SemanticProcessor(self.config, self.log, self.error_handler)
+                    
+                    # 根据内容大小决定是否使用分块处理
+                    max_content_size = self.config.get_config('max_content_size')
+                    if len(content) > max_content_size:
+                        content = self.semantic_processor.process_chunked(content, chunk_size=max_content_size)
+                    else:
+                        content = self.semantic_processor.process(content)
+                except Exception as e:
+                    self.log.warning(f"语义处理出错: {str(e)}，将使用原始内容继续")
+                    # 语义处理失败不应中断整个转换过程
+            
+            self.log.print_progress(f"正在保存到: {output_file}", 5, 6)
             # 保存处理后的文本
             try:
                 with open(output_file, 'w', encoding='utf-8') as f:
@@ -1497,7 +1543,7 @@ class Converter:
             # 内容验证
             validation_result = None
             if verify:
-                self.log.print_progress("执行内容完整性验证", 5, 5)
+                self.log.print_progress("执行内容完整性验证", 6, 6)
                 
                 try:
                     # 改进的验证方法，使用统计学多指标验证
@@ -1508,7 +1554,6 @@ class Converter:
                             content,
                             removed_content_hashes,
                             file_size,
-                            is_large_file=True
                         )
                     else:
                         # 小文件使用完整验证
@@ -1517,19 +1562,17 @@ class Converter:
                             content,
                             removed_content_hashes,
                             file_size,
-                            is_large_file=False
                         )
                     
                     if not validation_result[0]:
                         self.log.warning(f"警告：内容验证失败 - {validation_result[1]}")
                         return False, f"警告：内容验证失败 - {validation_result[1]}"
-                    self.log.info(f"    {validation_result[1]}")
                 except Exception as e:
                     return self.error_handler.handle_error(e, "内容验证", fatal=False, return_value=(False, "内容验证过程出错，但文件处理已完成"))
             else:
-                self.log.print_progress("跳过内容验证", 5, 5)
+                self.log.print_progress("跳过内容验证", 6, 6)
             
-            return True, f"转换成功! {validation_result[1] if validation_result else ''}"
+            return True, f"转换成功!\n  - 内容完整性评分: {validation_result[1].split('内容完整性评分: ')[1].replace('- ', '  - ') if validation_result else ''}"
             
         except Exception as e:
             return self.error_handler.handle_error(e, "转换过程", fatal=True)
@@ -1550,11 +1593,11 @@ class Application:
     def parse_args(self):
         """解析命令行参数
         
-        Returns:
+        Returns：
             dict: 解析后的参数字典
         """
         if len(sys.argv) < 3:
-            print("用法: python c3po.py 输入文件.info 输出文件.txt [--no-verify] [--workers=N] [--debug] [--log=LEVEL]")
+            print("用法: python c3po.py 输入文件.info 输出文件.txt [--no-verify] [--workers=N] [--debug] [--log=LEVEL] [--enable-semantic-markers]")
             sys.exit(1)
         
         input_file = sys.argv[1]
@@ -1565,6 +1608,7 @@ class Application:
         max_workers = self.config.get_config('max_workers')
         debug = self.config.get_config('debug')
         log_level = self.config.get_config('log_level')
+        enable_semantic_markers = self.config.get_config('enable_semantic_markers')
         
         for arg in sys.argv[3:]:
             if arg.startswith('--workers='):
@@ -1580,6 +1624,8 @@ class Application:
                 log_level = logging.DEBUG
             elif arg == '--no-verify':
                 verify = False
+            elif arg == '--enable-semantic-markers':
+                enable_semantic_markers = True
             elif arg.startswith('--log='):
                 level_name = arg.split('=')[1].upper()
                 if hasattr(logging, level_name):
@@ -1593,7 +1639,8 @@ class Application:
             'verify': verify,
             'max_workers': max_workers,
             'debug': debug,
-            'log_level': log_level
+            'log_level': log_level,
+            'enable_semantic_markers': enable_semantic_markers
         }
     
     def run(self):
@@ -1612,6 +1659,7 @@ class Application:
         self.log.info(f"工作线程: {args['max_workers'] if args['max_workers'] else '自动'}")
         self.log.info(f"调试模式: {'开启' if args['debug'] else '关闭'}")
         self.log.info(f"内容验证: {'开启' if args['verify'] else '关闭'}")
+        self.log.info(f"语义标记: {'开启' if args['enable_semantic_markers'] else '关闭'}")
         self.log.info(f"日志级别: {logging.getLevelName(args['log_level'])}")
         self.log.print_separator()
         
@@ -1623,7 +1671,7 @@ class Application:
             verify=args['verify'],
             max_workers=args['max_workers'],
             debug=args['debug'],
-            enable_semantic_markers=False  # 禁用语义标记
+            enable_semantic_markers=args['enable_semantic_markers']
         )
         
         # 显示结果

@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-语义处理模块 - 负责识别和标记文本中的语义结构
+Semantic Processing Module - Responsible for identifying and marking semantic structures in text
 
-该模块可以识别文本中的表格、代码块、列表等结构，并添加适当的标记。
-设计为独立模块，可以方便地启用或禁用。
+This module can identify structures such as tables, code blocks, lists, etc. in text and add appropriate markings.
+Designed as an independent module that can be easily enabled or disabled.
 """
 
 import re
@@ -14,80 +14,80 @@ import json
 from collections import defaultdict
 
 class SemanticProcessor:
-    """语义处理器 - 负责识别和标记文本中的语义结构
+    """Semantic Processor - Responsible for identifying and marking semantic structures in text
     
-    该模块可以识别文本中的表格、代码块、列表等结构，并添加适当的标记。
-    设计为独立模块，可以方便地启用或禁用。
+    This module can identify structures such as tables, code blocks, lists, etc. in text and add appropriate markings.
+    Designed as an independent module that can be easily enabled or disabled.
     """
     
     def __init__(self, config, log, error_handler=None):
-        """初始化语义处理器
+        """Initialize semantic processor
         
         Args:
-            config: 配置管理器
-            log: 日志管理器
-            error_handler: 错误处理器，如果为None则使用内部错误处理
+            config: Configuration manager
+            log: Log manager
+            error_handler: Error handler, uses internal error handling if None
         """
         self.config = config
         self.log = log
         self.error_handler = error_handler
         
-        # 获取配置中的启用状态，但默认设为True，因为调用此处理器时通常是有意启用的
+        # Get enabled status from config, but default to True since calling this processor is usually intentional
         self.enabled = True
         
-        # 获取语义标记定义
+        # Get semantic marker definitions
         self.markers = config.get_semantic_markers()
         
-        # 初始化统计信息
+        # Initialize statistics
         self.stats = {marker_type: 0 for marker_type in self.markers.keys()}
         self.stats['total'] = 0
         
-        # 初始化详细统计信息
+        # Initialize detailed statistics
         self.detailed_stats = {marker_type: [] for marker_type in self.markers.keys()}
     
     def is_enabled(self):
-        """检查语义处理是否启用
+        """Check if semantic processing is enabled
         
         Returns:
-            bool: 是否启用语义处理
+            bool: Whether semantic processing is enabled
         """
         return self.enabled
     
     def enable(self):
-        """启用语义处理"""
+        """Enable semantic processing"""
         self.enabled = True
-        self.log.info("语义处理已启用")
+        self.log.info("Semantic processing enabled")
     
     def disable(self):
-        """禁用语义处理"""
+        """Disable semantic processing"""
         self.enabled = False
-        self.log.info("语义处理已禁用")
+        self.log.info("Semantic processing disabled")
     
     def process(self, content, format_type='html'):
-        """处理内容，添加语义标记
+        """Process content, add semantic markings
         
         Args:
-            content: 要处理的文本内容
-            format_type: 标记格式类型，可选值：'html', 'markdown', 'json'
-        
+            content: Text content to process
+            format_type: Marking format type, options: 'html', 'markdown', 'json'
+            
         Returns:
-            str: 添加了语义标记的内容
+            str: Content with semantic markings added
         """
-        # 检查是否启用
+        # Check if enabled
         if not self.enabled:
-            self.log.debug("语义处理已禁用，返回原始内容")
+            self.log.debug("Semantic processing disabled, returning original content")
             return content
         
         try:
-            # 重置统计信息
+            # Reset statistics
             for key in self.stats:
                 self.stats[key] = 0
             
-            # 重置详细统计信息
+            # Reset detailed statistics
             for key in self.detailed_stats:
                 self.detailed_stats[key] = []
             
-            # 根据不同格式类型处理
+            # Process according to different format types
             if format_type == 'html':
                 result = self._process_html_format(content)
             elif format_type == 'markdown':
@@ -95,141 +95,141 @@ class SemanticProcessor:
             elif format_type == 'json':
                 result = self._process_json_format(content)
             else:
-                self.log.warning(f"不支持的标记格式: {format_type}，返回原始内容")
+                self.log.warning(f"Unsupported markup format: {format_type}, returning original content")
                 return content
             
-            # 记录处理统计
-            self.log.info(f"语义处理完成，共添加 {self.stats['total']} 个标记")
+            # Record processing statistics
+            self.log.info(f"Semantic processing completed, added {self.stats['total']} markers")
             
-            # 记录详细统计信息
+            # Record detailed statistics
             for marker_type, count in self.stats.items():
                 if marker_type != 'total' and count > 0:
-                    self.log.info(f"- {marker_type}: {count} 个")
-                    # 记录前5个示例（如果有）
+                    self.log.info(f"- {marker_type}: {count} markers")
+                    # Record first 5 examples (if available)
                     samples = self.detailed_stats[marker_type][:5]
                     for i, sample in enumerate(samples, 1):
                         truncated_text = sample['text'][:50] + ('...' if len(sample['text']) > 50 else '')
-                        self.log.debug(f"  示例{i}: {truncated_text}")
+                        self.log.debug(f"  Example {i}: {truncated_text}")
             
             return result
         except Exception as e:
-            error_msg = f"语义处理出错: {str(e)}"
+            error_msg = f"Semantic processing error: {str(e)}"
             if self.error_handler:
-                self.error_handler.handle_error(e, "语义处理", fatal=False)
+                self.error_handler.handle_error(e, "Semantic processing", fatal=False)
             else:
                 self.log.error(error_msg)
-            # 出错时返回原始内容
+            # Return original content on error
             return content
     
     def process_chunked(self, content, chunk_size=1024*1024):
-        """分块处理大文件的语义标记
+        """Process semantic markings for large files in chunks
         
         Args:
-            content: 要处理的文本内容
-            chunk_size: 分块大小
-        
+            content: Text content to process
+            chunk_size: Chunk size
+            
         Returns:
-            str: 添加了语义标记的内容
+            str: Content with semantic markings added
         """
-        # 检查是否启用
+        # Check if enabled
         if not self.enabled:
             return content
         
-        # 如果内容较小，直接处理
-        if len(content) <= chunk_size:
-            return self.process(content)
-        
         try:
-            # 分块处理
-            self.log.info(f"内容较大 ({len(content)/1024/1024:.2f} MB)，使用分块处理")
+            # If content is small, process directly
+            if len(content) <= chunk_size:
+                return self.process(content)
             
-            # 计算块数
+            # Process in chunks
+            self.log.info(f"Content is large ({len(content)/1024/1024:.2f} MB), using chunked processing")
+            
+            # Calculate number of chunks
             total_chunks = (len(content) + chunk_size - 1) // chunk_size
-            self.log.debug(f"将分为 {total_chunks} 个块进行处理")
+            self.log.debug(f"Divided into {total_chunks} chunks for processing")
             
-            # 保存原始统计信息
+            # Save original statistics
             original_stats = self.stats.copy()
             original_detailed_stats = {k: v.copy() for k, v in self.detailed_stats.items()}
             
-            # 重置统计信息
+            # Reset statistics
             for key in self.stats:
                 self.stats[key] = 0
             for key in self.detailed_stats:
                 self.detailed_stats[key] = []
             
-            # 处理每个块
+            # Process each chunk
             processed_chunks = []
             for i in range(0, len(content), chunk_size):
                 chunk = content[i:i+chunk_size]
                 
-                # 保存当前统计信息
+                # Save current statistics
                 current_stats = self.stats.copy()
                 current_detailed_stats = {k: v.copy() for k, v in self.detailed_stats.items()}
                 
-                # 处理当前块
+                # Process current chunk
                 processed_chunk = self.process(chunk)
                 processed_chunks.append(processed_chunk)
                 
-                # 记录每个块的处理结果
-                self.log.info(f"语义处理完成，共添加 {self.stats['total'] - current_stats['total']} 个标记")
+                # Record each chunk's processing results
+                self.log.info(f"Semantic processing completed, added {self.stats['total'] - current_stats['total']} markers")
                 
-                # 调整详细统计信息中的位置偏移
+                # Adjust position offsets in detailed statistics
                 for marker_type in self.detailed_stats:
                     for item in self.detailed_stats[marker_type][len(current_detailed_stats[marker_type]):]:
                         item['start'] += i
                         item['end'] += i
             
-            # 合并处理后的块
+            # Merge processed chunks
             result = ''.join(processed_chunks)
             
-            # 生成总体报告
-            self.log.info(f"所有块处理完成，总计添加 {self.stats['total']} 个标记")
+            # Generate overall report
+            self.log.info(f"All chunks processed, total {self.stats['total']} markers added")
             
             return result
         except Exception as e:
-            error_msg = f"分块语义处理出错: {str(e)}"
+            error_msg = f"Chunked semantic processing error: {str(e)}"
             if self.error_handler:
-                self.error_handler.handle_error(e, "分块语义处理", fatal=False)
+                self.error_handler.handle_error(e, "Chunked semantic processing", fatal=False)
             else:
                 self.log.error(error_msg)
-            # 出错时返回原始内容
+            # Return original content on error
             return content
     
     def _process_html_format(self, content):
-        """使用HTML格式处理内容
+        """Process content using HTML format
         
         Args:
-            content: 要处理的文本内容
-        
+            content: Text content to process
+            
         Returns:
-            str: 添加了HTML标记的内容
+            str: Content with HTML markings added
         """
         marked_content = content
         
-        # 处理每种类型的标记
+        # Process each type of marking
         for marker_type, marker_info in self.markers.items():
             pattern = marker_info['pattern']
             tag = marker_info['tag']
             
-            # 使用迭代器查找匹配项
+            # Use iterator to find matches
             matches = list(pattern.finditer(marked_content))
             if matches:
-                self.log.debug(f"找到 {len(matches)} 个 {marker_type} 标记")
+                self.log.debug(f"Found {len(matches)} {marker_type} markers")
                 
-                # 从后向前替换，避免位置偏移问题
+                # Replace from back to front to avoid position offset issues
                 for match in reversed(matches):
                     start, end = match.span()
                     match_text = match.group(0)
                     
-                    # 添加HTML标记
+                    # Add HTML markings
                     marked_text = f"<{tag}>{match_text}</{tag}>"
                     marked_content = marked_content[:start] + marked_text + marked_content[end:]
                     
-                    # 更新统计信息
+                    # Update statistics
                     self.stats[marker_type] += 1
                     self.stats['total'] += 1
                     
-                    # 记录详细统计信息
+                    # Record detailed statistics
                     self.detailed_stats[marker_type].append({
                         'text': match_text,
                         'start': start,
@@ -239,50 +239,50 @@ class SemanticProcessor:
         return marked_content
     
     def _process_markdown_format(self, content):
-        """使用Markdown格式处理内容
+        """Process content using Markdown format
         
         Args:
-            content: 要处理的文本内容
-        
+            content: Text content to process
+            
         Returns:
-            str: 添加了Markdown标记的内容
+            str: Content with Markdown markings added
         """
         marked_content = content
         
-        # 处理每种类型的标记
+        # Process each type of marking
         for marker_type, marker_info in self.markers.items():
             pattern = marker_info['pattern']
             tag = marker_info['tag'].lower()
             
-            # 使用迭代器查找匹配项
+            # Use iterator to find matches
             matches = list(pattern.finditer(marked_content))
             if matches:
-                self.log.debug(f"找到 {len(matches)} 个 {marker_type} 标记")
+                self.log.debug(f"Found {len(matches)} {marker_type} markers")
                 
-                # 从后向前替换，避免位置偏移问题
+                # Replace from back to front to avoid position offset issues
                 for match in reversed(matches):
                     start, end = match.span()
                     match_text = match.group(0)
                     
-                    # 添加Markdown标记
+                    # Add Markdown markings
                     if tag == 'code':
                         marked_text = f"```\n{match_text}\n```"
                     elif tag == 'heading':
                         marked_text = f"{match_text}\n{'=' * len(match_text.strip())}"
                     elif tag == 'table':
-                        # 表格已经是Markdown格式，保持不变
+                        # Tables are already in Markdown format, keep unchanged
                         marked_text = match_text
                     else:
-                        # 其他类型添加注释
+                        # Add comments for other types
                         marked_text = f"<!-- {tag}_start -->\n{match_text}\n<!-- {tag}_end -->"
                     
                     marked_content = marked_content[:start] + marked_text + marked_content[end:]
                     
-                    # 更新统计信息
+                    # Update statistics
                     self.stats[marker_type] += 1
                     self.stats['total'] += 1
                     
-                    # 记录详细统计信息
+                    # Record detailed statistics
                     self.detailed_stats[marker_type].append({
                         'text': match_text,
                         'start': start,
@@ -292,34 +292,34 @@ class SemanticProcessor:
         return marked_content
     
     def _process_json_format(self, content):
-        """提取内容的结构化信息，以JSON格式返回
+        """Extract structured information from content, return in JSON format
         
         Args:
-            content: 要处理的文本内容
-        
+            content: Text content to process
+            
         Returns:
-            str: JSON格式的结构化内容
+            str: Structured content in JSON format
         """
         structure = {
             "content": content,
             "semantic_elements": []
         }
         
-        # 处理每种类型的标记
+        # Process each type of marking
         for marker_type, marker_info in self.markers.items():
             pattern = marker_info['pattern']
             tag = marker_info['tag']
             
-            # 使用迭代器查找匹配项
+            # Use iterator to find matches
             matches = list(pattern.finditer(content))
             if matches:
-                self.log.debug(f"找到 {len(matches)} 个 {marker_type} 标记")
+                self.log.debug(f"Found {len(matches)} {marker_type} markers")
                 
                 for match in matches:
                     start, end = match.span()
                     match_text = match.group(0)
                     
-                    # 添加到结构化信息
+                    # Add to structured information
                     element = {
                         "type": tag,
                         "text": match_text,
@@ -328,46 +328,46 @@ class SemanticProcessor:
                     }
                     structure["semantic_elements"].append(element)
                     
-                    # 更新统计信息
+                    # Update statistics
                     self.stats[marker_type] += 1
                     self.stats['total'] += 1
                     
-                    # 记录详细统计信息
+                    # Record detailed statistics
                     self.detailed_stats[marker_type].append({
                         'text': match_text,
                         'start': start,
                         'end': end
                     })
         
-        # 按位置排序
+        # Sort by position
         structure["semantic_elements"].sort(key=lambda x: x["start"])
         
         return json.dumps(structure, ensure_ascii=False, indent=2)
     
     def get_stats(self):
-        """获取处理统计信息
+        """Get processing statistics
         
         Returns:
-            dict: 处理统计信息
+            dict: Processing statistics
         """
         return self.stats
     
     def generate_report(self):
-        """生成语义处理的详细统计报告
+        """Generate detailed statistical report for semantic processing
         
         Returns:
-            str: 格式化的统计报告
+            str: Formatted statistical report
         """
         if self.stats['total'] == 0:
-            return "未进行语义处理或未找到任何语义结构"
+            return "No semantic processing or no semantic structures found"
         
         report = []
-        report.append("语义处理统计报告")
-        report.append("=" * 20)
-        report.append(f"总计添加标记: {self.stats['total']} 个")
+        report.append("Semantic Processing Statistics Report")
+        report.append("=" * 30)
+        report.append(f"Total markers added: {self.stats['total']}")
         report.append("")
         
-        # 按数量排序，从多到少
+        # Sort by count, from most to least
         sorted_stats = sorted(
             [(k, v) for k, v in self.stats.items() if k != 'total' and v > 0],
             key=lambda x: x[1],
@@ -375,6 +375,6 @@ class SemanticProcessor:
         )
         
         for marker_type, count in sorted_stats:
-            report.append(f"{marker_type}: {count} 个")
+            report.append(f"{marker_type}: {count} markers")
         
         return "\n".join(report)
